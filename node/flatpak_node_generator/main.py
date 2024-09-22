@@ -16,6 +16,7 @@ from .providers import ProviderFactory
 from .providers.npm import NpmLockfileProvider, NpmModuleProvider, NpmProviderFactory
 from .providers.special import SpecialSourceProvider
 from .providers.yarn import YarnProviderFactory
+from .providers.pnpm import PnpmProviderFactory
 from .requests import Requests, StubRequests
 
 
@@ -29,9 +30,9 @@ def _scan_for_lockfiles(base: Path, patterns: List[str]) -> Iterator[Path]:
 
 async def _async_main() -> None:
     parser = argparse.ArgumentParser(description='Flatpak Node generator')
-    parser.add_argument('type', choices=['npm', 'yarn'])
+    parser.add_argument('type', choices=['npm', 'yarn', 'pnpm'])
     parser.add_argument(
-        'lockfile', help='The lockfile path (package-lock.json or yarn.lock)'
+        'lockfile', help='The lockfile path (package-lock.json or yarn.lock or pnpm-lock.yaml)'
     )
     parser.add_argument(
         '-o',
@@ -145,6 +146,9 @@ async def _async_main() -> None:
     if args.type == 'yarn' and (args.no_devel or args.no_autopatch):
         sys.exit('--no-devel and --no-autopatch do not apply to Yarn.')
 
+    if args.type == 'pnpm' and (args.no_devel or args.no_autopatch):
+        sys.exit('--no-devel and --no-autopatch do not apply to Pnpm.')
+
     if args.electron_chromedriver:
         print('WARNING: --electron-chromedriver is deprecated', file=sys.stderr)
         print(
@@ -184,6 +188,8 @@ async def _async_main() -> None:
         provider_factory = NpmProviderFactory(lockfile_root, npm_options)
     elif args.type == 'yarn':
         provider_factory = YarnProviderFactory()
+    elif args.type == 'pnpm':
+        provider_factory = PnpmProviderFactory()
     else:
         assert False, args.type
 
